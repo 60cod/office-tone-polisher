@@ -62,11 +62,21 @@
             background-color: #9ca3af; /* Gray-400 */
             cursor: not-allowed;
         }
+
+        /* CSS for the flashing title effect */
+        .flash-animation {
+            animation: flashTitle 0.8s ease-in-out; /* Animation duration and timing */
+        }
+
+        @keyframes flashTitle {
+            0%, 100% { color: #ffffff; } /* Start and end color (white, hidden) */
+            50% { color: #1f2937; } /* Midpoint color (gray-800, visible) */
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-white mb-8">급여체 필터</h1>
+        <h1 id="pageTitle" class="text-3xl font-bold text-center text-white mb-8">급여체 필터</h1>
         <p class="text-center text-gray-600 mb-8">회사에서 하고 싶은 말을 다 할 수는 없죠.. 적절한 표현으로 바꿔드립니다.</p>
 
         <div class="mb-6">
@@ -124,6 +134,7 @@
         const version2Output = document.getElementById('version2Output');
         const errorMessage = document.getElementById('errorMessage');
         const errorDetail = document.querySelector('#errorMessage .error-detail');
+        const pageTitle = document.getElementById('pageTitle'); // Get reference to the title element
 
         // Get all copy buttons
         const copyButtons = document.querySelectorAll('.copy-button');
@@ -192,6 +203,14 @@
                 alert('변환할 내용을 입력해주세요.');
                 return;
             }
+
+            // Add flash animation to the title
+            pageTitle.classList.add('flash-animation');
+            // Remove animation after its duration (0.8s as defined in CSS)
+            setTimeout(() => {
+                pageTitle.classList.remove('flash-animation');
+            }, 800);
+
 
             // Show loading state and disable buttons
             buttonText.textContent = '변환 중...';
