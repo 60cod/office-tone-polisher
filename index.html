@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>급여체 필터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for better Korean display */
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* Ensure the main container is centered and responsive */
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical; /* Allow vertical resizing */
+            min-height: 100px; /* Minimum height for textarea */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .copy-button {
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            padding: 8px 16px;
+            border-radius: 9999px; /* Rounded-full */
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            font-size: 0.875rem; /* Text-sm */
+        }
+        .copy-button:hover:not(:disabled) {
+            background-color: #4338ca; /* Indigo-700 */
+            transform: scale(1.05);
+        }
+        .copy-button:disabled {
+            background-color: #9ca3af; /* Gray-400 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">급여체 필터 💰</h1>
+        <p class="text-center text-gray-600 mb-8">회사에서 하고 싶은 말을 다 할 수는 없죠.. 적절한 표현으로 바꿔드립니다.</p>
+
+        <div class="mb-6">
+            <label for="apiKeyInput" class="block text-gray-700 text-lg font-semibold mb-2">Gemini API Key:</label>
+            <input type="text" id="apiKeyInput" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200" placeholder="Gemini API 키를 여기에 입력하세요.">
+            <p class="text-sm text-gray-500 mt-2">API 키는 Google Cloud Console에서 Gemini API를 활성화하여 발급받을 수 있습니다.</p>
+        </div>
+
+        <div class="mb-6">
+            <label for="userInput" class="block text-gray-700 text-lg font-semibold mb-2">입력해보세요!</label>
+            <textarea id="userInput" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200" placeholder="예: '이 업무를 제가 해야 하나요?'"></textarea>
+        </div>
+
+        <div class="flex justify-center mb-8">
+            <button id="transformButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 flex items-center justify-center">
+                <span id="buttonText">변환하기</span>
+                <div id="loadingSpinner" class="loading-spinner hidden ml-3"></div>
+            </button>
+        </div>
+
+        <div id="results" class="space-y-6">
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-800">👩🏻‍💼 옆자리 대리님</h2>
+                    <div class="flex items-center">
+                        <button class="copy-button" data-target="version1Output" disabled>복사</button>
+                    </div>
+                </div>
+                <p id="version1Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-800">👨🏻‍💼 어제 입사하신 분</h2>
+                    <div class="flex items-center">
+                        <button class="copy-button" data-target="version2Output" disabled>복사</button>
+                    </div>
+                </div>
+                <p id="version2Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="hidden mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert">
+            <p class="font-bold">오류 발생!</p>
+            <p class="error-detail">변환 중 문제가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const userInput = document.getElementById('userInput');
+        const transformButton = document.getElementById('transformButton');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const version1Output = document.getElementById('version1Output');
+        const version2Output = document.getElementById('version2Output');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorDetail = document.querySelector('#errorMessage .error-detail');
+
+        // Get all copy buttons
+        const copyButtons = document.querySelectorAll('.copy-button');
+
+        /**
+         * Sets the disabled state of the copy buttons.
+         * @param {boolean} isDisabled - True to disable, false to enable.
+         */
+        function setCopyButtonsDisabled(isDisabled) {
+            copyButtons.forEach(button => {
+                button.disabled = isDisabled;
+            });
+        }
+
+        /**
+         * Copies text from a specified element to the clipboard.
+         * @param {string} elementId The ID of the element whose text content will be copied.
+         */
+        function copyTextToClipboard(elementId) {
+            const textElement = document.getElementById(elementId);
+            // Only proceed if the button is enabled (meaning content is valid for copying)
+            if (textElement && !document.querySelector(`[data-target="${elementId}"]`).disabled) {
+                // Create a temporary textarea element to hold the text
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textElement.textContent;
+                document.body.appendChild(tempTextArea);
+
+                // Select the text and copy it
+                tempTextArea.select();
+                document.execCommand('copy');
+
+                // Remove the temporary textarea
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        // Add event listeners to copy buttons
+        copyButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const targetId = event.target.dataset.target;
+                copyTextToClipboard(targetId);
+            });
+        });
+
+        // Initially disable copy buttons
+        setCopyButtonsDisabled(true);
+
+        // Add keydown event listener to userInput for Enter key
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) { // Check for Enter key and not Shift+Enter
+                event.preventDefault(); // Prevent default newline behavior
+                transformButton.click(); // Programmatically click the transform button
+            }
+        });
+
+        transformButton.addEventListener('click', async () => {
+            const userThought = userInput.value.trim();
+            const apiKey = apiKeyInput.value.trim(); // Get API key from input field
+
+            if (!apiKey) {
+                alert('API 키를 입력해주세요.');
+                return;
+            }
+
+            if (!userThought) {
+                alert('변환할 내용을 입력해주세요.');
+                return;
+            }
+
+            // Show loading state and disable buttons
+            buttonText.textContent = '변환 중...';
+            loadingSpinner.classList.remove('hidden');
+            transformButton.disabled = true;
+            setCopyButtonsDisabled(true); // Disable copy buttons during loading
+            version1Output.textContent = '변환 중...';
+            version2Output.textContent = '변환 중...';
+            errorMessage.classList.add('hidden');
+            errorDetail.textContent = '변환 중 문제가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.'; // Reset error message
+
+            try {
+                // Construct the prompt for the LLM
+                const prompt = `당신은 한국 회사에서의 실무 커뮤니케이션에 능숙한 비즈니스 커뮤니케이션 전문가입니다.
+
+사용자가 "회사에서의 속마음" 또는 "직설적인 표현"을 입력하면, 
+이를 다음 두 가지 스타일로 변환해서 반환하세요:
+
+1. 버전 1: 일반적인 회사원의 공손하고 현실적인 표현 (업무 메일, 회의 발언, 메신저 등에 자연스럽게 어울리는 수준) 
+2. 버전 2: 더 정중하고 고도로 완곡한 표현 (직접적인 표현을 피하면서도 의도는 전달되도록 돌려 말하는 방식) 
+
+※ 말투는 한국 회사의 일반 직장인 기준에 맞추되, 과하게 과장되거나 지나치게 형식적이지 않게 작성하세요. 
+※ 너무 짧거나 성의 없는 표현은 피하고, 자연스러운 실무 상황에서 쓸 수 있게 표현하세요.
+
+사용자 입력 예시: 
+"이 업무를 제가 해야 하나요?" 
+→ 버전 1: 이 업무가 제 담당인지 확인 부탁드립니다. 현재 진행 중인 다른 업무들과의 우선순위 조정도 필요할 것 같아 문의드립니다.
+→ 버전 2: 해당 업무에 대한 지시를 받게 되어, 혹시 제가 이 업무에 가장 적합한 담당자인지 다시 한번 확인 부탁드려도 될까요? 다른 분들과의 업무 분담 상황이나, 제가 이 업무에 기여할 수 있는 부분을 좀 더 명확히 알 수 있다면 업무를 더욱 효율적으로 수행할 수 있을 것 같습니다.
+
+이 구조를 계속 반복합니다.
+
+사용자 입력: "${userThought}"
+→ 버전 1:
+→ 버전 2:`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                // Use the API key from the input field
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Check if the HTTP response was successful
+                if (!response.ok) {
+                    const errorResponseText = await response.text();
+                    console.error('API 응답 오류 상세:', errorResponseText);
+                    throw new Error(`HTTP 오류! 상태: ${response.status}, 메시지: ${errorResponseText.substring(0, 100)}...`);
+                }
+
+                // Get the raw response text first to handle potential empty/malformed JSON
+                const responseText = await response.text();
+                if (!responseText) {
+                    throw new Error('API 응답이 비어 있습니다.');
+                }
+
+                const result = JSON.parse(responseText); // Manually parse the text as JSON
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    console.log("Raw LLM response text:", text); // Log raw response for debugging
+                    
+                    // Parse the response text, looking for "→ 버전 1:" and "→ 버전 2:"
+                    const lines = text.split('\n').filter(line => line.trim() !== '');
+                    let version1 = '변환 실패: 내용을 찾을 수 없습니다.';
+                    let version2 = '변환 실패: 내용을 찾을 수 없습니다.';
+
+                    for (const line of lines) {
+                        if (line.startsWith('→ 버전 1:')) {
+                            version1 = line.substring('→ 버전 1:'.length).trim();
+                        } else if (line.startsWith('→ 버전 2:')) {
+                            version2 = line.substring('→ 버전 2:'.length).trim();
+                        }
+                    }
+
+                    version1Output.textContent = version1;
+                    version2Output.textContent = version2;
+
+                    // Enable copy buttons if conversion was successful
+                    setCopyButtonsDisabled(false);
+
+                } else {
+                    console.error('API 응답 구조가 예상과 다릅니다:', result);
+                    errorMessage.classList.remove('hidden');
+                    errorDetail.textContent = 'API 응답 구조가 예상과 다릅니다.';
+                    version1Output.textContent = '변환 실패';
+                    version2Output.textContent = '변환 실패';
+                    setCopyButtonsDisabled(true); // Keep disabled on conversion failure
+                }
+
+            } catch (error) {
+                console.error('API 호출 중 오류 발생:', error);
+                errorMessage.classList.remove('hidden');
+                errorDetail.textContent = `오류 내용: ${error.message || '알 수 없는 오류'}. API 키를 확인하거나 잠시 후 다시 시도해 주세요.`;
+                version1Output.textContent = '변환 실패';
+                version2Output.textContent = '변환 실패';
+                setCopyButtonsDisabled(true); // Keep disabled on API call error
+            } finally {
+                // Reset loading state
+                buttonText.textContent = '변환하기';
+                loadingSpinner.classList.add('hidden');
+                transformButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
