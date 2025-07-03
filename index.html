@@ -127,7 +127,7 @@
 
     <script type="module">
         // API Key input is removed from the HTML.
-        // The client-side code will now call the Vercel serverless function.
+        // The client-side code will now call the Netlify serverless function.
         // const apiKeyInput = document.getElementById('apiKeyInput'); // Removed API key input
         const userInput = document.getElementById('userInput');
         const transformButton = document.getElementById('transformButton');
@@ -196,7 +196,7 @@
         transformButton.addEventListener('click', async () => {
             const userThought = userInput.value.trim();
             // API Key is no longer directly used in client-side.
-            // It will be handled by the Vercel serverless function.
+            // It will be handled by the Netlify serverless function.
 
             if (!userThought) {
                 alert('변환할 내용을 입력해주세요.');
@@ -245,28 +245,28 @@
 → 버전 1:
 → 버전 2:`;
 
-                // Call the Vercel serverless function endpoint
+                // Call the Netlify serverless function endpoint
                 // This endpoint will internally call the Gemini API using the securely stored key.
-                const vercelApiEndpoint = '/api/gemini-proxy'; 
+                const netlifyApiEndpoint = '/.netlify/functions/gemini-proxy'; 
 
-                const response = await fetch(vercelApiEndpoint, {
+                const response = await fetch(netlifyApiEndpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: prompt }) // Send the constructed prompt to the serverless function
                 });
 
-                // Check if the HTTP response from Vercel function was successful
+                // Check if the HTTP response from Netlify function was successful
                 if (!response.ok) {
-                    const errorData = await response.json(); // Vercel function should return JSON error
-                    console.error('Vercel API 응답 오류 상세:', errorData);
+                    const errorData = await response.json(); // Netlify function should return JSON error
+                    console.error('Netlify API 응답 오류 상세:', errorData);
                     throw new Error(`백엔드 오류! 상태: ${response.status}, 메시지: ${errorData.message || '알 수 없는 오류'}`);
                 }
 
-                const result = await response.json(); // Vercel function returns JSON directly
+                const result = await response.json(); // Netlify function returns JSON directly
 
-                if (result.text) { // Vercel function's successful response contains a 'text' field
+                if (result.text) { // Netlify function's successful response contains a 'text' field
                     const text = result.text;
-                    console.log("Raw LLM response text from Vercel:", text); // Log raw response for debugging
+                    console.log("Raw LLM response text from Netlify:", text); // Log raw response for debugging
                     
                     // Parse the response text, looking for "→ 버전 1:" and "→ 버전 2:"
                     const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -288,7 +288,7 @@
                     setCopyButtonsDisabled(false);
 
                 } else {
-                    console.error('Vercel API 응답 구조가 예상과 다릅니다:', result);
+                    console.error('Netlify API 응답 구조가 예상과 다릅니다:', result);
                     errorMessage.classList.remove('hidden');
                     errorDetail.textContent = '백엔드 응답 구조가 예상과 다릅니다.';
                     version1Output.textContent = '변환 실패';
