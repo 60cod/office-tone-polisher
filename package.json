@@ -1,16 +1,14 @@
 {
   "name": "office-tone-polisher",
   "version": "1.0.0",
-  "description": "A proxy for Gemini API calls.",
-  "main": "api/gemini-proxy.js",
+  "description": "Netlify serverless proxy for Gemini API",
+  "main": "index.html",
   "scripts": {
-    "start": "vercel dev"
+    "build": "echo 'No build step needed for static HTML'",
+    "start": "netlify dev"
   },
   "dependencies": {
     "@google/generative-ai": "^0.1.0"
-  },
-  "devDependencies": {
-    "vercel": "^32.0.0"
   },
   "engines": {
     "node": "18.x"
