@@ -4,10 +4,5 @@
       "source": "/api/(.*)",
       "destination": "/api/gemini-proxy"
     }
-  ],
-  "functions": {
-    "api/gemini-proxy.js": {
-      "runtime": "nodejs@18.x"
-    }
-  }
+  ]
 }
