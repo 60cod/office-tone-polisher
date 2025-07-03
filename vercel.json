@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/gemini-proxy"
+    }
+  ],
+  "functions": {
+    "api/gemini-proxy.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
