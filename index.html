@@ -423,7 +423,7 @@
 
                 // Call the Netlify serverless function endpoint
                 // This endpoint will internally call the Gemini API using the securely stored key.
-                const netlifyApiEndpoint = '/.netlify/functions/gemini-proxy';
+                const netlifyApiEndpoint = 'https://extraordinary-mermaid-a35aee.netlify.app/.netlify/functions/gemini-proxy';
 
                 const response = await fetch(netlifyApiEndpoint, {
                     method: 'POST',
