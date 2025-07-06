@@ -10,13 +10,15 @@
         /* Custom font for better Korean display */
         body {
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
-            background-color: #f0f2f5;
+            background-color: #f0f2f5; /* Light background for default mode */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
+            transition: background-color 0.5s ease; /* Smooth transition for background */
+            overflow-y: auto; /* Ensure vertical scrolling when content overflows */
         }
         /* Ensure the main container is centered and responsive */
         .container {
@@ -27,10 +29,13 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             padding: 32px;
             box-sizing: border-box;
+            transition: background-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition for container */
+            position: relative; /* For absolute positioning of the toggle */
         }
         textarea {
             resize: vertical; /* Allow vertical resizing */
             min-height: 100px; /* Minimum height for textarea */
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; /* Smooth transition for textarea */
         }
         .loading-spinner {
             border: 4px solid rgba(0, 0, 0, 0.1);
@@ -72,15 +77,159 @@
             0%, 100% { color: #ffffff; } /* Start and end color (white, hidden) */
             50% { color: #1f2937; } /* Midpoint color (gray-800, visible) */
         }
+
+        /* Styles for 'Stealth Mode' (now Dark Mode) */
+        .stealth-mode body {
+            background-color: #1a1a1a !important; /* Dark background, force override */
+        }
+        .stealth-mode .container {
+            background-color: #2a2a2a;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        .stealth-mode h1,
+        .stealth-mode p,
+        .stealth-mode label,
+        .stealth-mode h2 {
+            color: #888888;
+        }
+        .stealth-mode textarea {
+            background-color: #3a3a3a;
+            color: #bbbbbb; 
+            border-color: #555555;
+        }
+        .stealth-mode textarea::placeholder {
+            color: #777777;
+        }
+        .stealth-mode .bg-gray-50 {
+            background-color: #333333;
+            border-color: #444444;
+        }
+        .stealth-mode .text-gray-700 {
+            color: #aaaaaa;
+        }
+        .stealth-mode .text-gray-600 {
+            color: #999999;
+        }
+        .stealth-mode .text-gray-500 {
+            color: #777777;
+        }
+        .stealth-mode .copy-button {
+            background-color: #3b3b3b;
+            color: #cccccc;
+        }
+        .stealth-mode .copy-button:hover:not(:disabled) {
+            background-color: #4a4a4a;
+        }
+        .stealth-mode .copy-button:disabled {
+            background-color: #555555;
+        }
+        .stealth-mode .bg-indigo-600 {
+            background-color: #4a4a4a;
+        }
+        .stealth-mode .bg-indigo-600:hover {
+            background-color: #5a5a5a;
+        }
+        .stealth-mode .loading-spinner {
+            border-left-color: #777777;
+        }
+        .stealth-mode .bg-red-100 {
+            background-color: #4a2a2a;
+            border-color: #7a4a4a;
+            color: #d49a9a;
+        }
+        .stealth-mode img {
+            filter: brightness(0.5); /* Make image darker */
+            transition: filter 0.5s ease;
+        }
+
+        /* Toggle switch styles for Dark Mode */
+        .dark-mode-toggle-container {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4f46e5;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4f46e5;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+
+        #version1Output,
+        #version2Output,
+        #version3Output {
+            height: auto;
+            min-height: 50px;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 id="pageTitle" class="text-3xl font-bold text-center text-white mb-8">급여체 필터</h1>
+        <!-- Dark Mode Toggle -->
+        <div class="dark-mode-toggle-container">
+            <span class="text-gray-700 text-sm font-semibold" id="stealthModeLabel">몰래쓰기</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="stealthModeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <h1 id="pageTitle" class="text-3xl font-bold text-center text-gray-600 mb-8">급여체 필터 💰</h1>
         <p class="text-center text-gray-600 mb-8">회사에서 하고 싶은 말을 다 할 수는 없죠.. 적절한 표현으로 바꿔드립니다.</p>
 
         <div class="mb-6 flex justify-center">
-            <img src="./resources/images/waterglasstoon.jpg" alt="급여체 필터" class="rounded-lg shadow-md w-[400px] h-auto">
+            <img src="https://placehold.co/400xauto/E0E0E0/333333?text=급여체%20필터%20이미지" alt="급여체 필터" class="rounded-lg shadow-md w-[400px] h-auto">
         </div>
         <p class="text-xs text-gray-500 mb-6 text-center">
             이 급여체 필터는 @waterglasstoon 님의 인스타툰을 보고 만들었어요!
@@ -99,23 +248,35 @@
         </div>
 
         <div id="results" class="space-y-6">
+            <!-- Version 1 -->
             <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-semibold text-gray-800">👩🏻‍💼 옆자리 대리님</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">👨🏻‍💼 김 대리님</h2>
                     <div class="flex items-center">
                         <button class="copy-button" data-target="version1Output" disabled>복사</button>
                     </div>
                 </div>
                 <p id="version1Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
             </div>
+            <!-- Version 2 -->
             <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-semibold text-gray-800">👨🏻‍💼 어제 입사하신 분</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">👩🏻‍💼 이 대리님</h2>
                     <div class="flex items-center">
                         <button class="copy-button" data-target="version2Output" disabled>복사</button>
                     </div>
                 </div>
                 <p id="version2Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
+            </div>
+            <!-- Version 3 -->
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-800">🧑🏻‍💼 박 대리님</h2>
+                    <div class="flex items-center">
+                        <button class="copy-button" data-target="version3Output" disabled>복사</button>
+                    </div>
+                </div>
+                <p id="version3Output" class="text-gray-700 whitespace-pre-wrap">여기에 변환된 내용이 표시됩니다.</p>
             </div>
         </div>
 
@@ -126,21 +287,20 @@
     </div>
 
     <script type="module">
-        // API Key input is removed from the HTML.
-        // The client-side code will now call the Netlify serverless function.
-        // const apiKeyInput = document.getElementById('apiKeyInput'); // Removed API key input
         const userInput = document.getElementById('userInput');
         const transformButton = document.getElementById('transformButton');
         const buttonText = document.getElementById('buttonText');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        const version1Output = document.getElementById('version1Output');
-        const version2Output = document.getElementById('version2Output');
+        const version1Output = document.getElementById('version1Output'); // Now Team Lead
+        const version2Output = document.getElementById('version2Output'); // Now Assistant Manager
+        const version3Output = document.getElementById('version3Output'); // Now New Hire
         const errorMessage = document.getElementById('errorMessage');
         const errorDetail = document.querySelector('#errorMessage .error-detail');
-        const pageTitle = document.getElementById('pageTitle'); // Get reference to the title element
-
-        // Get all copy buttons
+        const pageTitle = document.getElementById('pageTitle');
         const copyButtons = document.querySelectorAll('.copy-button');
+        const stealthModeToggle = document.getElementById('stealthModeToggle');
+        const stealthModeLabel = document.getElementById('stealthModeLabel');
+        const body = document.body;
 
         /**
          * Sets the disabled state of the copy buttons.
@@ -195,11 +355,22 @@
 
         transformButton.addEventListener('click', async () => {
             const userThought = userInput.value.trim();
-            // API Key is no longer directly used in client-side.
-            // It will be handled by the Netlify serverless function.
 
             if (!userThought) {
-                alert('변환할 내용을 입력해주세요.');
+                // Use a custom modal or message box instead of alert()
+                const messageBox = document.createElement('div');
+                messageBox.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50';
+                messageBox.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                        <p class="text-gray-800 text-lg mb-4">변환할 내용을 입력해주세요.</p>
+                        <button id="closeMessageBox" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full">확인</button>
+                    </div>
+                `;
+                document.body.appendChild(messageBox);
+
+                document.getElementById('closeMessageBox').addEventListener('click', () => {
+                    document.body.removeChild(messageBox);
+                });
                 return;
             }
 
@@ -218,41 +389,46 @@
             setCopyButtonsDisabled(true); // Disable copy buttons during loading
             version1Output.textContent = '변환 중...';
             version2Output.textContent = '변환 중...';
+            version3Output.textContent = '변환 중...';
             errorMessage.classList.add('hidden');
             errorDetail.textContent = '변환 중 문제가 발생했습니다. 백엔드 프록시 설정 또는 API 키 활성화 여부를 확인하거나 잠시 후 다시 시도해주세요.'; // Reset error message
 
+            // START OF ORIGINAL NETLIFY API CALL (UNCOMMENT TO REVERT)
             try {
                 // Construct the prompt for the LLM
                 const prompt = `당신은 한국 회사에서의 실무 커뮤니케이션에 능숙한 비즈니스 커뮤니케이션 전문가입니다.
 
-사용자가 "회사에서의 속마음" 또는 "직설적인 표현"을 입력하면, 
-이를 다음 두 가지 스타일로 변환해서 반환하세요:
+사용자가 "회사에서의 속마음" 또는 "직설적인 표현"을 입력하면,
+이를 다음 세 가지 스타일로 변환해서 반환하세요:
 
-1. 버전 1: 일반적인 회사원의 공손하고 현실적인 표현 (업무 메일, 회의 발언, 메신저 등에 자연스럽게 어울리는 수준) 
-2. 버전 2: 더 정중하고 고도로 완곡한 표현 (직접적인 표현을 피하면서도 의도는 전달되도록 돌려 말하는 방식) 
+1. 버전 1: 일 잘 하는 팀장님의 간결하고 핵심적인 표현 (상황 파악이 빠르고 일을 깔끔하게 처리하며, 공손하고 상대를 존중하면서도 좋게 돌려 말하지만 길지 않게 요점만 말하는 스타일)
+2. 버전 2: 일반적인 회사원의 공손하고 현실적인 표현 (업무 메일, 회의 발언, 메신저 등에 자연스럽게 어울리는 수준)
+3. 버전 3: 더 정중하고 고도로 완곡한 표현 (직접적인 표현을 피하면서도 의도는 전달되도록 돌려 말하는 방식)
 
-※ 말투는 한국 회사의 일반 직장인 기준에 맞추되, 과하게 과장되거나 지나치게 형식적이지 않게 작성하세요. 
+※ 말투는 한국 회사의 일반 직장인 기준에 맞추되, 과하게 과장되거나 지나치게 형식적이지 않게 작성하세요.
 ※ 너무 짧거나 성의 없는 표현은 피하고, 자연스러운 실무 상황에서 쓸 수 있게 표현하세요.
 
-사용자 입력 예시: 
-"이 업무를 제가 해야 하나요?" 
-→ 버전 1: 이 업무가 제 담당인지 확인 부탁드립니다. 현재 진행 중인 다른 업무들과의 우선순위 조정도 필요할 것 같아 문의드립니다.
-→ 버전 2: 해당 업무에 대한 지시를 받게 되어, 혹시 제가 이 업무에 가장 적합한 담당자인지 다시 한번 확인 부탁드려도 될까요? 다른 분들과의 업무 분담 상황이나, 제가 이 업무에 기여할 수 있는 부분을 좀 더 명확히 알 수 있다면 업무를 더욱 효율적으로 수행할 수 있을 것 같습니다.
+사용자 입력 예시:
+"이 업무를 제가 해야 하나요?"
+→ 버전 1: 이 업무는 제가 맡는 방향으로 이해하면 될까요?
+→ 버전 2: 이 업무가 제 담당인지 확인 부탁드립니다. 현재 진행 중인 다른 업무들과의 우선순위 조정도 필요할 것 같아 문의드립니다.
+→ 버전 3: 해당 업무에 대한 지시를 받게 되어, 혹시 제가 이 업무에 가장 적합한 담당자인지 다시 한번 확인 부탁드려도 될까요? 다른 분들과의 업무 분담 상황이나, 제가 이 업무에 기여할 수 있는 부분을 좀 더 명확히 알 수 있다면 업무를 더욱 효율적으로 수행할 수 있을 것 같습니다.
 
 이 구조를 계속 반복합니다.
 
 사용자 입력: "${userThought}"
 → 버전 1:
-→ 버전 2:`;
+→ 버전 2:
+→ 버전 3:`;
 
                 // Call the Netlify serverless function endpoint
                 // This endpoint will internally call the Gemini API using the securely stored key.
-                const netlifyApiEndpoint = '/.netlify/functions/gemini-proxy'; 
+                const netlifyApiEndpoint = '/.netlify/functions/gemini-proxy';
 
                 const response = await fetch(netlifyApiEndpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt }) // Send the constructed prompt to the serverless function
+                    body: JSON.stringify({ prompt: prompt })
                 });
 
                 // Check if the HTTP response from Netlify function was successful
@@ -266,23 +442,25 @@
 
                 if (result.text) { // Netlify function's successful response contains a 'text' field
                     const text = result.text;
-                    console.log("Raw LLM response text from Netlify:", text); // Log raw response for debugging
-                    
-                    // Parse the response text, looking for "→ 버전 1:" and "→ 버전 2:"
+                    // console.log("Raw LLM response text from Netlify:", text);
                     const lines = text.split('\n').filter(line => line.trim() !== '');
                     let version1 = '변환 실패: 내용을 찾을 수 없습니다.';
                     let version2 = '변환 실패: 내용을 찾을 수 없습니다.';
+                    let version3 = '변환 실패: 내용을 찾을 수 없습니다.';
 
                     for (const line of lines) {
                         if (line.startsWith('→ 버전 1:')) {
                             version1 = line.substring('→ 버전 1:'.length).trim();
                         } else if (line.startsWith('→ 버전 2:')) {
                             version2 = line.substring('→ 버전 2:'.length).trim();
+                        } else if (line.startsWith('→ 버전 3:')) {
+                            version3 = line.substring('→ 버전 3:'.length).trim();
                         }
                     }
 
                     version1Output.textContent = version1;
                     version2Output.textContent = version2;
+                    version3Output.textContent = version3;
 
                     // Enable copy buttons if conversion was successful
                     setCopyButtonsDisabled(false);
@@ -293,6 +471,7 @@
                     errorDetail.textContent = '백엔드 응답 구조가 예상과 다릅니다.';
                     version1Output.textContent = '변환 실패';
                     version2Output.textContent = '변환 실패';
+                    version3Output.textContent = '변환 실패';
                     setCopyButtonsDisabled(true); // Keep disabled on conversion failure
                 }
 
@@ -302,12 +481,22 @@
                 errorDetail.textContent = `오류 내용: ${error.message || '알 수 없는 오류'}. 백엔드 프록시 설정 또는 API 키 활성화 여부를 확인하거나 잠시 후 다시 시도해주세요.`;
                 version1Output.textContent = '변환 실패';
                 version2Output.textContent = '변환 실패';
+                version3Output.textContent = '변환 실패';
                 setCopyButtonsDisabled(true); // Keep disabled on API call error
             } finally {
                 // Reset loading state
                 buttonText.textContent = '변환하기';
                 loadingSpinner.classList.add('hidden');
                 transformButton.disabled = false;
+            }
+            // END OF ORIGINAL NETLIFY API CALL
+        });
+
+        stealthModeToggle.addEventListener('change', () => {
+            if (stealthModeToggle.checked) {
+                body.classList.add('stealth-mode');
+            } else {
+                body.classList.remove('stealth-mode');
             }
         });
     </script>
